@@ -1,0 +1,164 @@
+--- check for duplicates--
+SELECT id,
+ COUNT(*)
+ FROM dailyactivity
+ GROUP BY id
+ HAVING COUNT(*) >1;
+
+SELECT id,
+ COUNT(*)
+ FROM heartrate_seconds
+ GROUP BY id
+ HAVING COUNT(*) >1;
+
+SELECT id,
+ COUNT(*)
+ FROM hourlysteps
+ GROUP BY id
+ HAVING COUNT(*) >1;
+ 
+ SELECT id,
+ COUNT(*)
+ FROM sleepday
+ GROUP BY id
+ HAVING COUNT(*) >1;
+ 
+ SELECT id,
+ COUNT(*)
+ FROM weightloginfo
+ GROUP BY id
+ HAVING COUNT(*) >1;
+ 
+ 
+---- number of users---
+
+SELECT DISTINCT (id) as Users
+FROM heartrate_seconds;
+-- 3 users--
+
+SELECT DISTINCT (id) as Users
+FROM hourlysteps;
+-- 33 users--
+
+SELECT DISTINCT (id) as Users
+FROM sleepday;
+-- 24 users--
+
+SELECT DISTINCT (id) as Users
+FROM weightloginfo;
+-- 8 users--
+
+-- Add a new column to store the day of the week
+ALTER TABLE dailyactivity
+ADD COLUMN day_of_week VARCHAR(9);
+
+-- Update the new column with the extracted day name
+UPDATE dailyactivity
+SET day_of_week = DAYNAME(ActivityDate);
+
+-- Add new columns to store date and time
+ALTER TABLE hourlysteps
+ADD COLUMN date_column DATE,
+ADD COLUMN time_column TIME;
+
+-- Update the new columns with the split values
+UPDATE hourlysteps
+SET
+  date_column = DATE(Activityhour),
+  time_column = TIME(Activityhour);
+
+--- most active day of week---
+
+SELECT day_of_week, SUM(VeryActiveMinutes) as VeryActive
+FROM dailyactivity
+GROUP BY day_of_week
+order by day_of_week desc;
+
+--- total sum of minutes used---
+
+SELECT 
+  SUM(VeryActiveMinutes + FairlyActiveMinutes + LightlyActiveMinutes + SedentaryMinutes) AS total_activity_minutes
+FROM 
+  dailyactivity;
+
+--- average steps--
+
+SELECT AVG(TotalSteps)
+FROM dailyactivity;
+
+-- Correlation between day_of_week, total_distance and calories
+
+SELECT
+    COUNT(DISTINCT id) AS distinct_id_count,
+    day_of_week,
+    SUM(calories) AS total_calories,
+    SUM(TrackerDistance) AS total_distance
+FROM
+    dailyactivity
+GROUP BY
+    day_of_week;
+    
+    -- Total steps per weekday
+    
+    SELECT
+    COUNT(DISTINCT id) AS distinct_id_count,
+    day_of_week,
+    SUM(TotalSteps) AS total_steps
+FROM
+    dailyactivity
+GROUP BY
+    day_of_week;
+    
+    -- Sum of Total_Minutes_in_bed and Total_Minutes_Asleep
+    
+    Select count(Distinct dailyactivity.id), 
+    day_of_week, 
+    SUM(Totalminutesasleep) as Minutes_Asleep, 
+    SUM(TotaLtimeinbed) as Minutes_In_Bed
+From dailyActivity
+join sleepday
+on dailyactivity.id = sleepday.id
+Where Totaltimeinbed is not null
+Group by day_of_week;
+
+--- Calculate Average minutes per user--- 
+
+Select id,
+AVG(VeryActiveMinutes) as VeryActive_Minutes,
+AVG(FairlyActiveMinutes) as FActive_Minutes,
+AVG(LightlyActiveMinutes) as LightActive_Minutes,
+AVG(SedentaryMinutes) as Sed_Minutes
+From dailyActivity
+Group by Id;
+
+-- Calories burned per day of week--
+
+Select day_of_week, AVG(Calories) as Avg_Cal
+From dailyactivity
+Group by day_of_week
+Order by day_of_week ASC;
+
+--- Calories burned by user--
+
+SELECT id, AVG(Calories) AS Avg_Cal
+FROM dailyactivity
+GROUP BY id;
+
+-- Calculate the impact of Activities and Calories---
+
+SELECT id, 
+SUM(VeryActiveMinutes) AS Total_Active,
+SUM(FairlyActiveMinutes) AS Total_Fairly,
+SUM(LightlyActiveMinutes) AS Total_Lightly,
+SUM(SedentaryMinutes) AS Total_Sedentary,
+SUM(Calories) AS Total_Calories
+FROM dailyactivity
+GROUP BY id;
+
+---- Active users rate--
+
+Select ActivityDate,
+SUM(CASE When TotalSteps > 0 THEN 1 END) as Active_User,
+SUM(CASE When TotalSteps >= 0 THEN 1 END) as Total
+From dailyactivity
+Group by ActivityDate;
