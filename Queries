@@ -10,7 +10,7 @@ SELECT id,
  FROM heartrate_seconds
  GROUP BY id
  HAVING COUNT(*) >1;
-
+ 
 SELECT id,
  COUNT(*)
  FROM hourlysteps
